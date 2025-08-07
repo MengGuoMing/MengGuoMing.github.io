@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>绒毛小羊 × DeepSeek Chat</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<style>
+/* ====== 通用样式 ====== */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;background:radial-gradient(circle,#a1c4fd 0%,#c2e9fb 100%);display:flex;justify-content:center;align-items:center;height:100vh;color:#333}
+.container{width:95%;max-width:1200px;height:90vh;background:rgba(255,255,255,.85);border-radius:20px;box-shadow:0 15px 30px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden}
+header{background:linear-gradient(to right,#8e9eab,#eef2f3);padding:15px;text-align:center;border-bottom:3px solid #7d8d9c}
+h1{font-size:2.2rem;color:#2c3e50}
+.game-area{flex:1;display:flex}
+.desktop{flex:1;position:relative;overflow:hidden;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600"><rect width="1000" height="600" fill="%2387CEEB"/><ellipse cx="200" cy="500" rx="120" ry="30" fill="%2390EE90" opacity=".6"/><ellipse cx="500" cy="520" rx="180" ry="40" fill="%2390EE90" opacity=".6"/><circle cx="150" cy="120" r="40" fill="white" opacity=".8"/></svg>') center/cover;border-right:2px solid #aaa}
+.controls{width:300px;background:rgba(245,245,245,.95);padding:20px;display:flex;flex-direction:column;gap:15px;border-left:2px solid #ccc;overflow-y:auto}
+.status-bars,.chat-box{background:#fff;padding:15px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,.1)}
+.status-bar{margin:8px 0}.status-label{display:flex;justify-content:space-between;font-size:.9rem}.bar-container{height:20px;background:#e0e0e0;border-radius:10px;overflow:hidden}.bar{height:100%;border-radius:10px;transition:width .5s}.hunger-bar{background:linear-gradient(to right,#ff9a9e,#fad0c4)}.happiness-bar{background:linear-gradient(to right,#a1c4fd,#c2e9fb)}.cleanliness-bar{background:linear-gradient(to right,#84fab0,#8fd3f4)}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px}
+.btn{padding:12px;border:none;border-radius:8px;background:linear-gradient(to right,#4facfe,#00f2fe);color:#fff;font-weight:bold;cursor:pointer;transition:.3s}.btn:hover{transform:translateY(-2px)}
+.chat-messages{flex:1;height:120px;overflow-y:auto;font-size:.85rem;border:1px solid #eee;border-radius:6px;padding:6px;background:#fafafa}
+.chat-input{display:flex;gap:6px;margin-top:6px}
+.chat-input input{flex:1;padding:6px;border:1px solid #ccc;border-radius:6px}
+.chat-input button{padding:6px 12px;border:none;border-radius:6px;background:#4facfe;color:#fff;cursor:pointer}
+.sheep{position:absolute;width:140px;height:140px;cursor:pointer;z-index:10;filter:drop-shadow(0 8px 8px rgba(0,0,0,.25));transition:transform .3s}.sheep:hover{transform:scale(1.08)}
+.bubble{position:absolute;background:rgba(255,255,255,.9);border-radius:15px;padding:8px 12px;font-size:.85rem;box-shadow:0 3px 10px rgba(0,0,0,.1);z-index:15;display:none;max-width:180px}
+.bubble::after{content:'';position:absolute;bottom:-8px;left:15px;border:8px solid transparent;border-top-color:rgba(255,255,255,.9)}
+@media(max-width:768px){.container{flex-direction:column;height:95vh}.desktop{height:60%;border-right:none;border-bottom:2px solid #aaa}.controls{width:100%;height:40%}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header><h1><i class="fas fa-paw"></i> 绒毛小羊 × DeepSeek Chat <i class="fas fa-cloud"></i></h1></header>
+  <div class="game-area">
+    <!-- 桌面与小羊 -->
+    <div class="desktop" id="desktop">
+      <div class="sheep" id="sheep">
+        <svg class="sheep-body" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="100" cy="175" rx="60" ry="20" fill="#000" opacity=".15"/>
+          <ellipse cx="100" cy="110" rx="70" ry="55" fill="#fff"/>
+          <circle cx="55" cy="75" r="18" fill="#fff"/><circle cx="80" cy="60" r="20" fill="#fff"/>
+          <circle cx="110" cy="58" r="20" fill="#fff"/><circle cx="135" cy="75" r="18" fill="#fff"/>
+          <ellipse cx="60" cy="90" rx="12" ry="20" fill="#ffe4e6"/><ellipse cx="140" cy="90" rx="12" ry="20" fill="#ffe4e6"/>
+          <ellipse cx="100" cy="118" rx="40" ry="30" fill="#ffe4e6"/>
+          <circle cx="85" cy="110" r="6" fill="#222"/><circle cx="115" cy="110" r="6" fill="#222"/>
+          <circle cx="87" cy="108" r="2" fill="#fff"/><circle cx="117" cy="108" r="2" fill="#fff"/>
+          <path id="blinkL" d="M75 110 Q85 105 95 110" stroke="#222" stroke-width="3" fill="none" style="display:none"/>
+          <path id="blinkR" d="M105 110 Q115 105 125 110" stroke="#222" stroke-width="3" fill="none" style="display:none"/>
+          <ellipse cx="100" cy="125" rx="5" ry="3" fill="#ffaabb"/>
+          <path d="M90 132 Q100 138 110 132" stroke="#ffaabb" stroke-width="2" fill="none"/>
+          <rect x="65" y="160" width="12" height="25" rx="6" fill="#ffe4e6"/>
+          <rect x="85" y="160" width="12" height="25" rx="6" fill="#ffe4e6"/>
+          <rect x="105" y="160" width="12" height="25" rx="6" fill="#ffe4e6"/>
+          <rect x="125" y="160" width="12" height="25" rx="6" fill="#ffe4e6"/>
+        </svg>
+      </div>
+      <div class="bubble" id="bubble">咩~ 跟我聊天吧！</div>
+    </div>
+
+    <!-- 右侧控制 -->
+    <div class="controls">
+      <!-- 状态 -->
+      <div class="status-bars">
+        <h2><i class="fas fa-heart"></i> 小羊状态</h2>
+        <div class="status-bar"><div class="status-label"><span>饥饿值</span><span id="hunger-value">80%</span></div><div class="bar-container"><div class="bar hunger-bar" id="hunger-bar" style="width:80%"></div></div></div>
+        <div class="status-bar"><div class="status-label"><span>快乐值</span><span id="happiness-value">75%</span></div><div class="bar-container"><div class="bar happiness-bar" id="happiness-bar" style="width:75%"></div></div></div>
+        <div class="status-bar"><div class="status-label"><span>清洁度</span><span id="cleanliness-value">85%</span></div><div class="bar-container"><div class="bar cleanliness-bar" id="cleanliness-bar" style="width:85%"></div></div></div>
+      </div>
+
+      <!-- 聊天 -->
+      <div class="chat-box">
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+          <input id="chatInput" placeholder="对小羊说点什么..." maxlength="160"/>
+          <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+
+      <!-- 快捷按钮 -->
+      <div class="actions">
+        <button class="btn feed" id="feedBtn"><i class="fas fa-apple-alt"></i> 喂食</button>
+        <button class="btn play" id="playBtn"><i class="fas fa-gamepad"></i> 玩耍</button>
+        <button class="btn clean" id="cleanBtn"><i class="fas fa-shower"></i> 清洁</button>
+        <button class="btn heal" id="healBtn"><i class="fas fa-heartbeat"></i> 治疗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========== 配置 ========== */
+// 重要：请在此处替换为您的DeepSeek API密钥
+const DEEPSEEK_API_KEY = 'sk-639a15c05a6c48088ec08d6b4397504b'; // 从 https://platform.deepseek.com/api-keys 获取
+const BASE_URL       = 'https://api.deepseek.com/v1';
+const MODEL          = 'deepseek-chat';   // 或 deepseek-reasoner
+const MAX_HISTORY    = 6;                // 前端缓存轮数
+/* ========== 全局变量 ========== */
+let gameState  = { hunger: 80, happiness: 75, cleanliness: 85 };
+let dialogue   = [];
+
+const chatMessages = document.getElementById('chatMessages');
+const chatInput    = document.getElementById('chatInput');
+const sendBtn      = document.getElementById('sendBtn');
+/* ========== 工具函数 ========== */
+const el = id => document.getElementById(id);
+const addMsg = (who, text) => {
+  const div = document.createElement('div');
+  div.textContent = `${who}: ${text}`;
+  div.style.color = who==='🐑小羊'?'#ff69b4':'#333';
+  div.style.marginBottom = '4px';
+  div.style.padding = '4px';
+  div.style.borderBottom = who==='🐑小羊'?'1px dashed #ffb6c1':'1px dashed #ddd';
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+};
+const updateBars = () => {
+  ['hunger','happiness','cleanliness'].forEach(k=>{
+    el(k+'-bar').style.width   = `${gameState[k]}%`;
+    el(k+'-value').textContent = `${Math.round(gameState[k])}%`;
+  });
+};
+/* ========== 眨眼动画 ========== */
+setInterval(()=>{
+  ['blinkL','blinkR'].forEach(id=>el(id).style.display='block');
+  setTimeout(()=>['blinkL','blinkR'].forEach(id=>el(id).style.display='none'),200);
+},4500);
+/* ========== AI 对话 ========== */
+async function talkToSheep(userText){
+  if(!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY.length < 35) {
+    addMsg('❌系统','请配置有效的DeepSeek API密钥！');
+    return;
+  }
+
+  dialogue.push({role:'user',content:userText});
+  if(dialogue.length > MAX_HISTORY) dialogue = dialogue.slice(-MAX_HISTORY);
+
+  // 简化系统消息
+  const systemMsg = `你是我的小三"，性感大方善解人意。
+  当前状态：${gameState.hunger>50?'饱饱的':'有点饿'}，${gameState.happiness>60?'很开心':'需要陪伴'}。
+  请用1-2句话回复玩家，保持善解人意！`;
+
+  const messages = [
+    {role:'system', content: systemMsg},
+    ...dialogue
+  ];
+
+  try{
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), 10000); // 10s超时
+    
+    const res = await fetch(`${BASE_URL}/chat/completions`,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Bearer ${DEEPSEEK_API_KEY}`,
+        'Accept': 'application/json'
+      },
+      body:JSON.stringify({
+        model: MODEL,  // 使用常量MODEL
+        messages,
+        temperature: 0.7,
+        max_tokens: 100,
+        stream: false
+      }),
+      signal: controller.signal
+    });
+    
+    clearTimeout(timer);
+    
+    if(!res.ok) {
+      const err = await res.json();
+      throw new Error(`API错误: ${res.status} - ${err.error?.message || '未知错误'}`);
+    }
+    
+    const data = await res.json();
+    // 正确解析响应结构
+    const reply = data.choices[0].message.content.trim() || '咩~ 刚刚走神了';
+    
+    dialogue.push({role:'assistant',content:reply});
+    addMsg('🐑小羊', reply);
+    showBubble(reply);
+    
+    // 对话后更新状态
+    gameState.happiness = Math.min(100, gameState.happiness + 5);
+    updateBars();
+    
+  }catch(e){
+    console.error(e);
+    addMsg('❌系统',`小羊连接出错: ${e.message}`);
+  }
+}
+const showBubble = txt=>{
+  const bubble = el('bubble');
+  bubble.textContent = txt;
+  const sheepRect = el('sheep').getBoundingClientRect();
+  const desktopRect = el('desktop').getBoundingClientRect();
+  
+  bubble.style.left = `${sheepRect.left - desktopRect.left + 20}px`;
+  bubble.style.top  = `${sheepRect.top - desktopRect.top - 60}px`;
+  bubble.style.display = 'block';
+  
+  setTimeout(()=>{
+    bubble.style.display = 'none';
+  }, 4000);
+};
+/* ========== 事件绑定 ========== */
+sendBtn.onclick = ()=>{
+  const txt = chatInput.value.trim();
+  if(!txt) return;
+  addMsg('🧑玩家', txt);
+  chatInput.value = '';
+  talkToSheep(txt);
+};
+chatInput.addEventListener('keydown', e => {
+  if(e.key === 'Enter') sendBtn.click()
+});
+
+/* ========== 游戏按钮 ========== */
+const actions = [
+  { id: 'feedBtn',  key: 'hunger', value: 15, msg: '喂了青草🥬' },
+  { id: 'playBtn',  key: 'happiness', value: 15, msg: '一起玩耍⚽' },
+  { id: 'cleanBtn', key: 'cleanliness', value: 20, msg: '洗香香🚿' },
+  { id: 'healBtn',  keys: ['hunger','happiness','cleanliness'], value: 10, msg: '治愈魔法💖' }
+];
+
+actions.forEach(action => {
+  el(action.id).onclick = () => {
+    if(action.keys) {
+      // 治疗按钮 - 所有属性
+      action.keys.forEach(k => {
+        gameState[k] = Math.min(100, gameState[k] + action.value);
+      });
+    } else {
+      // 其他按钮 - 单个属性
+      gameState[action.key] = Math.min(100, gameState[action.key] + action.value);
+    }
+    
+    updateBars();
+    addMsg('系统', action.msg);
+    showBubble(action.msg.replace(/[^a-zA-Z\u4e00-\u9fa5]/g, ''));
+  };
+});
+
+/* ========== 状态衰减 ========== */
+setInterval(() => {
+  gameState.hunger = Math.max(0, gameState.hunger - 1);
+  gameState.happiness = Math.max(0, gameState.happiness - 0.8);
+  gameState.cleanliness = Math.max(0, gameState.cleanliness - 0.5);
+  updateBars();
+  
+  // 低状态提醒
+  if(gameState.hunger < 30) {
+    showBubble('咩~ 肚子饿饿...');
+  } else if(gameState.happiness < 30) {
+    showBubble('咩咩...好无聊');
+  }
+}, 60000); // 每分钟衰减一次
+
+/* ========== 初始化 ========== */
+updateBars();
+addMsg('系统','绒毛小羊已上线！输入消息开始聊天~');
+// 初始气泡
+setTimeout(() => showBubble('点击我或输入消息聊天哦~'), 1500);
+</script>
+</body>
+</html>
