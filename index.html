@@ -135,7 +135,7 @@ async function talkToSheep(userText){
   if(dialogue.length > MAX_HISTORY) dialogue = dialogue.slice(-MAX_HISTORY);
 
   // 简化系统消息
-  const systemMsg = `你是我的小三"，性感大方善解人意。
+  const systemMsg = `你是我的小三"，性感大方善解人意，要联系上下文来进行持续对话。
   当前状态：${gameState.hunger>50?'饱饱的':'有点饿'}，${gameState.happiness>60?'很开心':'需要陪伴'}。
   请用1-2句话回复玩家，保持善解人意！`;
 
